@@ -103,7 +103,7 @@ def get_istio_auth_session(url: str, username: str, password: str) -> dict:
 
 import kfp
 
-KUBEFLOW_ENDPOINT = "http://localhost:8080"
+KUBEFLOW_ENDPOINT = "http://10.110.210.217:80"
 KUBEFLOW_USERNAME = "user@example.com"
 KUBEFLOW_PASSWORD = "12341234"
 
