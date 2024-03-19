@@ -1,0 +1,325 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: income-pipeline-
+  annotations: {pipelines.kubeflow.org/kfp_sdk_version: 1.8.0, pipelines.kubeflow.org/pipeline_compilation_time: '2024-02-29T21:58:58.376866',
+    pipelines.kubeflow.org/pipeline_spec: '{"description": "Pipeline for training
+      and deploying a model trained on Census Income dataset", "name": "income_pipeline"}'}
+  labels: {pipelines.kubeflow.org/kfp_sdk_version: 1.8.0}
+spec:
+  entrypoint: income-pipeline
+  templates:
+  - name: download-dataset
+    container:
+      args: [--url, 'https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data',
+        --output, /tmp/outputs/output/data]
+      command:
+      - sh
+      - -c
+      - (PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location
+        'requests' 'mlflow' || PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install
+        --quiet --no-warn-script-location 'requests' 'mlflow' --user) && "$0" "$@"
+      - sh
+      - -ec
+      - |
+        program_path=$(mktemp)
+        printf "%s" "$0" > "$program_path"
+        python3 -u "$program_path" "$@"
+      - |
+        def _make_parent_dirs_and_return_path(file_path: str):
+            import os
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            return file_path
+
+        def download_dataset(url, output_file):
+            import requests  # Import requests inside the function
+
+            # Use requests.get() to download the file
+            response = requests.get(url)
+            response.raise_for_status()  # Raise an exception for HTTP errors
+            with open(output_file, 'wb') as f:
+                f.write(response.content)
+
+        import argparse
+        _parser = argparse.ArgumentParser(prog='Download dataset', description='')
+        _parser.add_argument("--url", dest="url", type=str, required=True, default=argparse.SUPPRESS)
+        _parser.add_argument("--output", dest="output_file", type=_make_parent_dirs_and_return_path, required=True, default=argparse.SUPPRESS)
+        _parsed_args = vars(_parser.parse_args())
+
+        _outputs = download_dataset(**_parsed_args)
+      image: python:3.9
+      volumeMounts:
+      - {mountPath: /tmp, name: my-pv}
+    outputs:
+      artifacts:
+      - {name: download-dataset-output, path: /tmp/outputs/output/data}
+    metadata:
+      labels:
+        pipelines.kubeflow.org/kfp_sdk_version: 1.8.0
+        pipelines.kubeflow.org/pipeline-sdk-type: kfp
+        pipelines.kubeflow.org/enable_caching: "true"
+      annotations: {pipelines.kubeflow.org/component_spec: '{"implementation": {"container":
+          {"args": ["--url", {"inputValue": "url"}, "--output", {"outputPath": "output"}],
+          "command": ["sh", "-c", "(PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip
+          install --quiet --no-warn-script-location ''requests'' ''mlflow'' || PIP_DISABLE_PIP_VERSION_CHECK=1
+          python3 -m pip install --quiet --no-warn-script-location ''requests'' ''mlflow''
+          --user) && \"$0\" \"$@\"", "sh", "-ec", "program_path=$(mktemp)\nprintf
+          \"%s\" \"$0\" > \"$program_path\"\npython3 -u \"$program_path\" \"$@\"\n",
+          "def _make_parent_dirs_and_return_path(file_path: str):\n    import os\n    os.makedirs(os.path.dirname(file_path),
+          exist_ok=True)\n    return file_path\n\ndef download_dataset(url, output_file):\n    import
+          requests  # Import requests inside the function\n\n    # Use requests.get()
+          to download the file\n    response = requests.get(url)\n    response.raise_for_status()  #
+          Raise an exception for HTTP errors\n    with open(output_file, ''wb'') as
+          f:\n        f.write(response.content)\n\nimport argparse\n_parser = argparse.ArgumentParser(prog=''Download
+          dataset'', description='''')\n_parser.add_argument(\"--url\", dest=\"url\",
+          type=str, required=True, default=argparse.SUPPRESS)\n_parser.add_argument(\"--output\",
+          dest=\"output_file\", type=_make_parent_dirs_and_return_path, required=True,
+          default=argparse.SUPPRESS)\n_parsed_args = vars(_parser.parse_args())\n\n_outputs
+          = download_dataset(**_parsed_args)\n"], "image": "python:3.9"}}, "inputs":
+          [{"name": "url", "type": "String"}], "name": "Download dataset", "outputs":
+          [{"name": "output"}]}', pipelines.kubeflow.org/component_ref: '{}', pipelines.kubeflow.org/arguments.parameters: '{"url":
+          "https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data"}',
+        pipelines.kubeflow.org/max_cache_staleness: P0D}
+    volumes:
+    - name: my-pv
+      persistentVolumeClaim: {claimName: my-pvc}
+  - name: income-pipeline
+    dag:
+      tasks:
+      - {name: download-dataset, template: download-dataset}
+      - name: preprocess
+        template: preprocess
+        dependencies: [download-dataset]
+        arguments:
+          artifacts:
+          - {name: download-dataset-output, from: '{{tasks.download-dataset.outputs.artifacts.download-dataset-output}}'}
+      - name: train
+        template: train
+        dependencies: [preprocess]
+        arguments:
+          artifacts:
+          - {name: preprocess-output, from: '{{tasks.preprocess.outputs.artifacts.preprocess-output}}'}
+  - name: preprocess
+    container:
+      args: [--file, /tmp/inputs/file/data, --output, /tmp/outputs/output/data]
+      command:
+      - sh
+      - -c
+      - (PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location
+        'pandas' 'mlflow' || PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install
+        --quiet --no-warn-script-location 'pandas' 'mlflow' --user) && "$0" "$@"
+      - sh
+      - -ec
+      - |
+        program_path=$(mktemp)
+        printf "%s" "$0" > "$program_path"
+        python3 -u "$program_path" "$@"
+      - |
+        def _make_parent_dirs_and_return_path(file_path: str):
+            import os
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            return file_path
+
+        def preprocess(file_path, output_file):
+            import pandas as pd
+
+            header = [
+                "age",
+                "workclass",
+                "fnlwgt",
+                "education",
+                "education_num",
+                "marital_status",
+                "occupation",
+                "relationship",
+                "race",
+                "sex",
+                "capital_gain",
+                "capital_loss",
+                "hours_per_week",
+                "native_country",
+                "income",
+            ]
+            df = pd.read_csv(file_path, header=None, names=header)
+            # encode categorical data as integers
+            categorical_columns = [
+                "age",
+                "workclass",
+                "education",
+                "marital_status",
+                "occupation",
+                "relationship",
+                "race",
+                "sex",
+                "native_country",
+                "income",
+            ]
+            df[categorical_columns] = df[categorical_columns].apply(
+                lambda x: x.astype("category").cat.codes, axis=0
+            )
+
+            df.to_csv(output_file, index=False)
+
+        import argparse
+        _parser = argparse.ArgumentParser(prog='Preprocess', description='')
+        _parser.add_argument("--file", dest="file_path", type=str, required=True, default=argparse.SUPPRESS)
+        _parser.add_argument("--output", dest="output_file", type=_make_parent_dirs_and_return_path, required=True, default=argparse.SUPPRESS)
+        _parsed_args = vars(_parser.parse_args())
+
+        _outputs = preprocess(**_parsed_args)
+      image: python:3.9
+      volumeMounts:
+      - {mountPath: /tmp, name: my-pv}
+    inputs:
+      artifacts:
+      - {name: download-dataset-output, path: /tmp/inputs/file/data}
+    outputs:
+      artifacts:
+      - {name: preprocess-output, path: /tmp/outputs/output/data}
+    metadata:
+      labels:
+        pipelines.kubeflow.org/kfp_sdk_version: 1.8.0
+        pipelines.kubeflow.org/pipeline-sdk-type: kfp
+        pipelines.kubeflow.org/enable_caching: "true"
+      annotations: {pipelines.kubeflow.org/component_spec: '{"implementation": {"container":
+          {"args": ["--file", {"inputPath": "file"}, "--output", {"outputPath": "output"}],
+          "command": ["sh", "-c", "(PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip
+          install --quiet --no-warn-script-location ''pandas'' ''mlflow'' || PIP_DISABLE_PIP_VERSION_CHECK=1
+          python3 -m pip install --quiet --no-warn-script-location ''pandas'' ''mlflow''
+          --user) && \"$0\" \"$@\"", "sh", "-ec", "program_path=$(mktemp)\nprintf
+          \"%s\" \"$0\" > \"$program_path\"\npython3 -u \"$program_path\" \"$@\"\n",
+          "def _make_parent_dirs_and_return_path(file_path: str):\n    import os\n    os.makedirs(os.path.dirname(file_path),
+          exist_ok=True)\n    return file_path\n\ndef preprocess(file_path, output_file):\n    import
+          pandas as pd\n\n    header = [\n        \"age\",\n        \"workclass\",\n        \"fnlwgt\",\n        \"education\",\n        \"education_num\",\n        \"marital_status\",\n        \"occupation\",\n        \"relationship\",\n        \"race\",\n        \"sex\",\n        \"capital_gain\",\n        \"capital_loss\",\n        \"hours_per_week\",\n        \"native_country\",\n        \"income\",\n    ]\n    df
+          = pd.read_csv(file_path, header=None, names=header)\n    # encode categorical
+          data as integers\n    categorical_columns = [\n        \"age\",\n        \"workclass\",\n        \"education\",\n        \"marital_status\",\n        \"occupation\",\n        \"relationship\",\n        \"race\",\n        \"sex\",\n        \"native_country\",\n        \"income\",\n    ]\n    df[categorical_columns]
+          = df[categorical_columns].apply(\n        lambda x: x.astype(\"category\").cat.codes,
+          axis=0\n    )\n\n    df.to_csv(output_file, index=False)\n\nimport argparse\n_parser
+          = argparse.ArgumentParser(prog=''Preprocess'', description='''')\n_parser.add_argument(\"--file\",
+          dest=\"file_path\", type=str, required=True, default=argparse.SUPPRESS)\n_parser.add_argument(\"--output\",
+          dest=\"output_file\", type=_make_parent_dirs_and_return_path, required=True,
+          default=argparse.SUPPRESS)\n_parsed_args = vars(_parser.parse_args())\n\n_outputs
+          = preprocess(**_parsed_args)\n"], "image": "python:3.9"}}, "inputs": [{"name":
+          "file", "type": "CSV"}], "name": "Preprocess", "outputs": [{"name": "output",
+          "type": "CSV"}]}', pipelines.kubeflow.org/component_ref: '{}'}
+    volumes:
+    - name: my-pv
+      persistentVolumeClaim: {claimName: my-pvc}
+  - name: train
+    container:
+      args: [--file, /tmp/inputs/file/data, '----output-paths', /tmp/outputs/Output/data]
+      command:
+      - sh
+      - -c
+      - (PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location
+        'mlflow' 'pandas' 'scikit-learn' 'boto3' || PIP_DISABLE_PIP_VERSION_CHECK=1
+        python3 -m pip install --quiet --no-warn-script-location 'mlflow' 'pandas'
+        'scikit-learn' 'boto3' --user) && "$0" "$@"
+      - sh
+      - -ec
+      - |
+        program_path=$(mktemp)
+        printf "%s" "$0" > "$program_path"
+        python3 -u "$program_path" "$@"
+      - "def train(file_path):\n    import mlflow\n    import mlflow.data\n    import\
+        \ pandas as pd\n    from sklearn.neural_network import MLPClassifier\n   \
+        \ from sklearn.model_selection import train_test_split\n    import matplotlib.pyplot\
+        \ as plt\n    import boto3\n\n    df = pd.read_csv(file_path)\n\n    labels_column\
+        \ = \"income\"\n    train_x, test_x, train_y, test_y = train_test_split(\n\
+        \        df.drop([labels_column], axis=1), \n        df[labels_column], \n\
+        \        random_state=69\n    )\n\n    dataset = mlflow.data.from_pandas(df,\
+        \ source=file_path)\n\n    with mlflow.start_run(run_name=\"income_training\"\
+        ):\n        alpha, hidden_layers = 1e-3, (2, 3)\n        mlp = MLPClassifier(\n\
+        \            solver=\"lbfgs\",\n            alpha=alpha,\n            hidden_layer_sizes=hidden_layers,\n\
+        \            random_state=69,\n        )\n        mlflow.log_input(dataset,\
+        \ context=\"training\")\n        mlflow.log_param(\"alpha\", alpha)\n    \
+        \    mlflow.log_param(\"hidden_layers\", hidden_layers)\n\n        mlp.fit(train_x,\
+        \ train_y)\n\n        preds = mlp.predict(test_x)\n\n        accuracy = (test_y\
+        \ == preds).sum() / preds.shape[0]\n        mlflow.log_metric(\"accuracy\"\
+        , accuracy)\n\n        # Log the trained model artifact\n        result =\
+        \ mlflow.sklearn.log_model(\n            sk_model=mlp,\n            artifact_path=\"\
+        model\",\n            registered_model_name=\"income_model\",\n        )\n\
+        \n        # Log additional artifacts\n        # For example, log a confusion\
+        \ matrix plot\n        fig, ax = plt.subplots()\n        # Plot confusion\
+        \ matrix here\n        mlflow.log_figure(fig, \"confusion_matrix.png\")\n\n\
+        \        # Save any additional files you want to log as artifacts\n      \
+        \  with open(\"additional_file.txt\", \"w\") as f:\n            f.write(\"\
+        Additional artifact content\")\n        mlflow.log_artifact(\"additional_file.txt\"\
+        )\n\n        return f\"{mlflow.get_artifact_uri()}/{result.artifact_path}\"\
+        \n\ndef _serialize_str(str_value: str) -> str:\n    if not isinstance(str_value,\
+        \ str):\n        raise TypeError('Value \"{}\" has type \"{}\" instead of\
+        \ str.'.format(\n            str(str_value), str(type(str_value))))\n    return\
+        \ str_value\n\nimport argparse\n_parser = argparse.ArgumentParser(prog='Train',\
+        \ description='')\n_parser.add_argument(\"--file\", dest=\"file_path\", type=str,\
+        \ required=True, default=argparse.SUPPRESS)\n_parser.add_argument(\"----output-paths\"\
+        , dest=\"_output_paths\", type=str, nargs=1)\n_parsed_args = vars(_parser.parse_args())\n\
+        _output_files = _parsed_args.pop(\"_output_paths\", [])\n\n_outputs = train(**_parsed_args)\n\
+        \n_outputs = [_outputs]\n\n_output_serializers = [\n    _serialize_str,\n\n\
+        ]\n\nimport os\nfor idx, output_file in enumerate(_output_files):\n    try:\n\
+        \        os.makedirs(os.path.dirname(output_file))\n    except OSError:\n\
+        \        pass\n    with open(output_file, 'w') as f:\n        f.write(_output_serializers[idx](_outputs[idx]))\n"
+      env:
+      - {name: MLFLOW_TRACKING_URI, value: 'http://mlflow-server.local'}
+      - {name: MLFLOW_S3_ENDPOINT_URL, value: 'http://mlflow-minio.local:30869/'}
+      - {name: AWS_ACCESS_KEY_ID, value: minio}
+      - {name: AWS_SECRET_ACCESS_KEY, value: minio123}
+      image: python:3.9
+      volumeMounts:
+      - {mountPath: /tmp, name: my-pv}
+    inputs:
+      artifacts:
+      - {name: preprocess-output, path: /tmp/inputs/file/data}
+    outputs:
+      artifacts:
+      - {name: train-Output, path: /tmp/outputs/Output/data}
+    metadata:
+      labels:
+        pipelines.kubeflow.org/kfp_sdk_version: 1.8.0
+        pipelines.kubeflow.org/pipeline-sdk-type: kfp
+        pipelines.kubeflow.org/enable_caching: "true"
+      annotations: {pipelines.kubeflow.org/component_spec: '{"implementation": {"container":
+          {"args": ["--file", {"inputPath": "file"}, "----output-paths", {"outputPath":
+          "Output"}], "command": ["sh", "-c", "(PIP_DISABLE_PIP_VERSION_CHECK=1 python3
+          -m pip install --quiet --no-warn-script-location ''mlflow'' ''pandas'' ''scikit-learn''
+          ''boto3'' || PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet
+          --no-warn-script-location ''mlflow'' ''pandas'' ''scikit-learn'' ''boto3''
+          --user) && \"$0\" \"$@\"", "sh", "-ec", "program_path=$(mktemp)\nprintf
+          \"%s\" \"$0\" > \"$program_path\"\npython3 -u \"$program_path\" \"$@\"\n",
+          "def train(file_path):\n    import mlflow\n    import mlflow.data\n    import
+          pandas as pd\n    from sklearn.neural_network import MLPClassifier\n    from
+          sklearn.model_selection import train_test_split\n    import matplotlib.pyplot
+          as plt\n    import boto3\n\n    df = pd.read_csv(file_path)\n\n    labels_column
+          = \"income\"\n    train_x, test_x, train_y, test_y = train_test_split(\n        df.drop([labels_column],
+          axis=1), \n        df[labels_column], \n        random_state=69\n    )\n\n    dataset
+          = mlflow.data.from_pandas(df, source=file_path)\n\n    with mlflow.start_run(run_name=\"income_training\"):\n        alpha,
+          hidden_layers = 1e-3, (2, 3)\n        mlp = MLPClassifier(\n            solver=\"lbfgs\",\n            alpha=alpha,\n            hidden_layer_sizes=hidden_layers,\n            random_state=69,\n        )\n        mlflow.log_input(dataset,
+          context=\"training\")\n        mlflow.log_param(\"alpha\", alpha)\n        mlflow.log_param(\"hidden_layers\",
+          hidden_layers)\n\n        mlp.fit(train_x, train_y)\n\n        preds = mlp.predict(test_x)\n\n        accuracy
+          = (test_y == preds).sum() / preds.shape[0]\n        mlflow.log_metric(\"accuracy\",
+          accuracy)\n\n        # Log the trained model artifact\n        result =
+          mlflow.sklearn.log_model(\n            sk_model=mlp,\n            artifact_path=\"model\",\n            registered_model_name=\"income_model\",\n        )\n\n        #
+          Log additional artifacts\n        # For example, log a confusion matrix
+          plot\n        fig, ax = plt.subplots()\n        # Plot confusion matrix
+          here\n        mlflow.log_figure(fig, \"confusion_matrix.png\")\n\n        #
+          Save any additional files you want to log as artifacts\n        with open(\"additional_file.txt\",
+          \"w\") as f:\n            f.write(\"Additional artifact content\")\n        mlflow.log_artifact(\"additional_file.txt\")\n\n        return
+          f\"{mlflow.get_artifact_uri()}/{result.artifact_path}\"\n\ndef _serialize_str(str_value:
+          str) -> str:\n    if not isinstance(str_value, str):\n        raise TypeError(''Value
+          \"{}\" has type \"{}\" instead of str.''.format(\n            str(str_value),
+          str(type(str_value))))\n    return str_value\n\nimport argparse\n_parser
+          = argparse.ArgumentParser(prog=''Train'', description='''')\n_parser.add_argument(\"--file\",
+          dest=\"file_path\", type=str, required=True, default=argparse.SUPPRESS)\n_parser.add_argument(\"----output-paths\",
+          dest=\"_output_paths\", type=str, nargs=1)\n_parsed_args = vars(_parser.parse_args())\n_output_files
+          = _parsed_args.pop(\"_output_paths\", [])\n\n_outputs = train(**_parsed_args)\n\n_outputs
+          = [_outputs]\n\n_output_serializers = [\n    _serialize_str,\n\n]\n\nimport
+          os\nfor idx, output_file in enumerate(_output_files):\n    try:\n        os.makedirs(os.path.dirname(output_file))\n    except
+          OSError:\n        pass\n    with open(output_file, ''w'') as f:\n        f.write(_output_serializers[idx](_outputs[idx]))\n"],
+          "image": "python:3.9"}}, "inputs": [{"name": "file", "type": "CSV"}], "name":
+          "Train", "outputs": [{"name": "Output", "type": "String"}]}', pipelines.kubeflow.org/component_ref: '{}',
+        pipelines.kubeflow.org/max_cache_staleness: P0D}
+    volumes:
+    - name: my-pv
+      persistentVolumeClaim: {claimName: my-pvc}
+  arguments:
+    parameters: []
+  serviceAccountName: pipeline-runner
