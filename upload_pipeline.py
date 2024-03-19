@@ -100,8 +100,8 @@ def get_istio_auth_session(url: str, username: str, password: str) -> dict:
     return auth_session
 
 
-from kfp._client import Client
 
+import kfp
 
 KUBEFLOW_ENDPOINT = "http://localhost:8080"
 KUBEFLOW_USERNAME = "user@example.com"
@@ -113,10 +113,14 @@ auth_session = get_istio_auth_session(
     password=KUBEFLOW_PASSWORD
 )
 
-client = Client(host=f"{KUBEFLOW_ENDPOINT}/pipeline", cookies=auth_session["session_cookie"])
+client = kfp.Client(host=f"{KUBEFLOW_ENDPOINT}/pipeline", cookies=auth_session["session_cookie"], namespace="kubeflow-user-example-com")
+print(client.list_experiments())
 
-# client = kfp.Client(host=f"{KUBEFLOW_ENDPOINT}/pipeline", namespace="kubeflow-user-example-com", cookies=auth_session["session_cookie"])
+# Load pipeline from a file
+pipeline_package_path = '/home/nagesh/Desktop/GoCD/income.yaml'
 
 
-client.create_run_from_pipeline_package('income.yaml', arguments={}, namespace="kubeflow-user-example-com")
-#client.up
+    # Attempt to upload and run the pipeline
+# uploaded_pipeline = client.upload_pipeline(pipeline_package_path, pipeline_name='income-pipeline2')
+client.create_run_from_pipeline_package("income.yaml", arguments={}, namespace="kubeflow-user-example-com")
+print("Pipeline run started successfully!")
