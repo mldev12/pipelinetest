@@ -1,11 +1,12 @@
 #!/bin/bash
 
 echo "Let us pretend that this is building something ... and takes 20 seconds"
+pip install python3.8
 pip install setuptools
 pip install kfp==1.8.0
 pip list
 
-python3 -V
-python3 upload_pipeline.py
+python3.8 -V
+python3.8 upload_pipeline.py
 
 EOF
