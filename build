@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "Let us pretend that this is building something ... and takes 20 seconds"
-
+pip install setuptools
 pip install kfp==1.8.0
 pip list
 
