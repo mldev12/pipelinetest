@@ -5,6 +5,6 @@ echo "Let us pretend that this is building something ... and takes 20 seconds"
 pip list
 pip install kfp==2.3.0
 python3 -V
-python3.9 upload_pipeline.py
+python3 upload_pipeline.py
 
 EOF
