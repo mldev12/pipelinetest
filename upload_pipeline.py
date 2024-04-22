@@ -142,6 +142,7 @@ if final_state == "SUCCEEDED":
     run_result = client.get_run(run_id)
     # Assuming a V2 engine, artifacts are stored under task details. You may need to adjust based on your SDK version.
     # Inspect run_details
+    #print(dir(run_detail))
 if hasattr(run_result, 'run_details'):
     print("Run Details:")
     print(run_result.run_details)
