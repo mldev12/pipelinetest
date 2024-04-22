@@ -129,26 +129,7 @@ auth_session = get_istio_auth_session(
 client = kfp.Client(host=f"{KUBEFLOW_ENDPOINT}/pipeline", cookies=auth_session["session_cookie"], namespace="kubeflow-user-example-com")
 print(client.list_experiments())
 
-# Load pipeline from a file
-pipeline_package_path = '/home/nagesh/Desktop/GoCD/income.yaml'
-
-
     # Attempt to upload and run the pipeline
 # uploaded_pipeline = client.upload_pipeline(pipeline_package_path, pipeline_name='income-pipeline2')
 run = client.create_run_from_pipeline_package("income.yaml", arguments={}, namespace="kubeflow-user-example-com")
-run_id = run.run_id
 
-# Wait for the pipeline run to complete
-try:
-    final_status = wait_for_run_completion(client, run_id)
-    print(f"Run completed with status: {final_status}")
-except TimeoutError as e:
-    print(str(e))
-
-# If the run was successful, retrieve and handle outputs
-if final_status == "Succeeded":
-    # Fetch run details or specific component outputs as required
-    run_result = client.get_run(run_id)
-    artifact_uri = run_result.run_info  # Adjust based on your needs
-    print("Model artifact URI:", artifact_uri)
-print("Pipeline run started successfully!")
