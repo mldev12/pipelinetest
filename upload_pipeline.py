@@ -140,6 +140,7 @@ except TimeoutError as e:
 if final_state == "SUCCEEDED":
     # Fetch run details or specific component outputs as required
     run_result = client.get_run(run_id)
-    artifact_uri = run_result.run_info  # Adjust based on your needs
-    print("Model artifact URI:", artifact_uri)
+    print(run_result)
+    # artifact_uri = run_result.run_info  # Adjust based on your needs
+    # print("Model artifact URI:", artifact_uri)
 
