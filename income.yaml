@@ -204,7 +204,7 @@ deploymentSpec:
           \         artifact_path=\"model\",\n            registered_model_name=\"\
           income_model\",\n        )\n\n        # Save the model URI to the OutputPath\n\
           \        # Retrieve and write the model path to the artifact\n        model_uri_path\
-          \ = f\"{mlflow.get_artifact_uri()}/model\"\n        model_uri.metadata['uri']\
+          \ = f\"{mlflow.get_artifact_uri()}/{result.artifact_path}\"\n        model_uri.metadata['uri']\
           \ = model_uri_path\n\n        # Convert JSON string to a Python dictionary\n\
           \        # executor_output = json.loads(result)\n\n        # # Access the\
           \ 'Output' value under 'parameterValues'\n        # output_value = executor_output[\"\
