@@ -129,7 +129,7 @@ try:
     final_status = client.wait_for_run_completion(run_id, 36000)
     print("Here we are!!")
     get_run_response = client.get_run(run_id=run_id)
-    print(get_run_response.state)
+    final_state = get_run_response.state
     print("Here we end!!")
     #run_status = getattr(getattr(get_run_response, "run"), "status")
     #print(f"Run completed with status: {status}")
@@ -137,7 +137,7 @@ except TimeoutError as e:
     print(str(e))
 
 # If the run was successful, retrieve and handle outputs
-if final_status == "SUCCEEDED":
+if final_state == "SUCCEEDED":
     # Fetch run details or specific component outputs as required
     run_result = client.get_run(run_id)
     artifact_uri = run_result.run_info  # Adjust based on your needs
