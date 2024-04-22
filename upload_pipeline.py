@@ -141,8 +141,5 @@ if final_state == "SUCCEEDED":
     # Fetch run details or specific component outputs as required
     run_result = client.get_run(run_id)
     # Assuming a V2 engine, artifacts are stored under task details. You may need to adjust based on your SDK version.
-    for task_name, task_detail in run_result.pipeline_runtime.workflow_manifest.tasks.items():
-        print(f"Task: {task_name}")
-        for artifact_name, artifact_detail in task_detail.outputs.artifacts.items():
-            print(f"  Artifact: {artifact_name} - {artifact_detail.uri}")
+    print(dir(run_result))
 
