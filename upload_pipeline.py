@@ -3,6 +3,7 @@ import requests
 from urllib.parse import urlsplit
 from kfp import Client, compiler
 from kfp.dsl import pipeline
+import time
 
 def get_istio_auth_session(url: str, username: str, password: str) -> dict:
     """
