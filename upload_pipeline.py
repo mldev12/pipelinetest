@@ -4,6 +4,7 @@ from urllib.parse import urlsplit
 from kfp import Client, compiler
 from kfp.dsl import pipeline
 import time
+import json
 
 def get_istio_auth_session(url: str, username: str, password: str) -> dict:
     """
@@ -130,13 +131,15 @@ try:
     get_run_response = client.get_run(run_id=run_id)
     print(get_run_response)
     print("Here we end!!")
+    data = json.loads(get_run_response)
+    final_state = data['state']
     #run_status = getattr(getattr(get_run_response, "run"), "status")
     #print(f"Run completed with status: {status}")
 except TimeoutError as e:
     print(str(e))
 
 # If the run was successful, retrieve and handle outputs
-if final_status == "Succeeded":
+if final_state == "SUCCEEDED":
     # Fetch run details or specific component outputs as required
     run_result = client.get_run(run_id)
     artifact_uri = run_result.run_info  # Adjust based on your needs
