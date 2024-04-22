@@ -152,3 +152,9 @@ if hasattr(run_result, 'pipeline_spec'):
     print("Pipeline Spec:")
     print(run_result.pipeline_spec)
 
+# Inspect pipeline_spec
+if hasattr(run_result, '_run_details'):
+    print("_Run Details:")
+    print(run_result._run_details)
+
+
