@@ -2,9 +2,19 @@
 
 echo "Let us pretend that this is building something ... and takes 20 seconds"
 
-pip list
+# Sleep for 20 seconds to simulate the build time
+sleep 20
 
-python3 -V
-python3 upload_pipeline.py
+# Execute the Python script and capture its output
+output=$(python3 upload_pipeline.py)
+
+# Check if the execution was successful
+if [ $? -eq 0 ]; then
+    echo "Script executed successfully."
+    echo "$output"
+else
+    echo "Failed to execute script. Check for errors."
+fi
+
 
 <<EOF
