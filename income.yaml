@@ -203,20 +203,21 @@ deploymentSpec:
           \    result = mlflow.sklearn.log_model(\n            sk_model=mlp,\n   \
           \         artifact_path=\"model\",\n            registered_model_name=\"\
           income_model\",\n        )\n\n        # Save the model URI to the OutputPath\n\
-          \        model_uri_full = f\"{mlflow.get_artifact_uri()}/model\"\n     \
-          \   with open(model_uri, 'w') as f:\n            f.write(model_uri_full)\n\
-          \n        # Convert JSON string to a Python dictionary\n        # executor_output\
-          \ = json.loads(result)\n\n        # # Access the 'Output' value under 'parameterValues'\n\
-          \        # output_value = executor_output[\"parameterValues\"][\"Output\"\
-          ]\n        # print(output_value)\n\n        # Print the output value\n \
-          \       print(\"WE ARE HERE!!!!\")\n        print(type(result))\n      \
-          \  print(\"This is result\", result)\n        # Log additional artifacts\n\
-          \        # For example, log a confusion matrix plot\n        fig, ax = plt.subplots()\n\
-          \        # Plot confusion matrix here\n        mlflow.log_figure(fig, \"\
-          confusion_matrix.png\")\n\n        # Save any additional files you want\
-          \ to log as artifacts\n        with open(\"additional_file.txt\", \"w\"\
-          ) as f:\n            f.write(\"Additional artifact content\")\n        mlflow.log_artifact(\"\
-          additional_file.txt\")\n\n        return f\"{mlflow.get_artifact_uri()}/{result.artifact_path}\"\
+          \        # Retrieve and write the model path to the artifact\n        model_uri_path\
+          \ = f\"{mlflow.get_artifact_uri()}/model\"\n        model_uri.metadata['uri']\
+          \ = model_uri_path\n\n        # Convert JSON string to a Python dictionary\n\
+          \        # executor_output = json.loads(result)\n\n        # # Access the\
+          \ 'Output' value under 'parameterValues'\n        # output_value = executor_output[\"\
+          parameterValues\"][\"Output\"]\n        # print(output_value)\n\n      \
+          \  # Print the output value\n        print(\"WE ARE HERE!!!!\")\n      \
+          \  print(type(result))\n        print(\"This is result\", result)\n    \
+          \    # Log additional artifacts\n        # For example, log a confusion\
+          \ matrix plot\n        fig, ax = plt.subplots()\n        # Plot confusion\
+          \ matrix here\n        mlflow.log_figure(fig, \"confusion_matrix.png\")\n\
+          \n        # Save any additional files you want to log as artifacts\n   \
+          \     with open(\"additional_file.txt\", \"w\") as f:\n            f.write(\"\
+          Additional artifact content\")\n        mlflow.log_artifact(\"additional_file.txt\"\
+          )\n\n        return f\"{mlflow.get_artifact_uri()}/{result.artifact_path}\"\
           \n\n"
         env:
         - name: MLFLOW_TRACKING_URI
