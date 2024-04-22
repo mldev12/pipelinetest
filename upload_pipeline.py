@@ -99,20 +99,6 @@ def get_istio_auth_session(url: str, username: str, password: str) -> dict:
 
     return auth_session
 
-# Function to wait for pipeline run to complete
-def wait_for_run_completion(client: Client, run_id: str, timeout: int = 3600):
-    start_time = time.time()
-    while True:
-        run_detail = client.get_run(run_id)
-        run_status = run_detail.run.status
-        if run_status in ["Succeeded", "Failed", "Skipped"]:
-            return run_status
-        if time.time() - start_time > timeout:
-            raise TimeoutError("Timed out while waiting for the run to complete.")
-        time.sleep(10)  # Check every 10 seconds
-
-
-
 
 import kfp
 
