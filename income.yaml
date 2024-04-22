@@ -1,8 +1,6 @@
 # PIPELINE DEFINITION
 # Name: income-pipeline
 # Description: Pipeline for training and deploying a model trained on Census Income dataset
-# Outputs:
-#    train-mls3_storage_path: system.Metrics
 components:
   comp-download-dataset:
     executorLabel: exec-download-dataset
@@ -30,6 +28,14 @@ components:
           artifactType:
             schemaTitle: system.Artifact
             schemaVersion: 0.0.1
+  comp-print-uri:
+    executorLabel: exec-print-uri
+    inputDefinitions:
+      artifacts:
+        model_uri:
+          artifactType:
+            schemaTitle: system.Artifact
+            schemaVersion: 0.0.1
   comp-train:
     executorLabel: exec-train
     inputDefinitions:
@@ -40,13 +46,10 @@ components:
             schemaVersion: 0.0.1
     outputDefinitions:
       artifacts:
-        mls3_storage_path:
+        model_uri:
           artifactType:
-            schemaTitle: system.Metrics
+            schemaTitle: system.Artifact
             schemaVersion: 0.0.1
-      parameters:
-        Output:
-          parameterType: STRING
 deploymentSpec:
   executors:
     exec-download-dataset:
@@ -124,6 +127,35 @@ deploymentSpec:
           \ = df[categorical_columns].apply(\n        lambda x: x.astype(\"category\"\
           ).cat.codes, axis=0\n    )\n\n    df.to_csv(output_file, index=False)\n\n"
         image: python:3.9
+    exec-print-uri:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - print_uri
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef print_uri(model_uri: Input[Artifact]):\n    print(\"Model URI:\"\
+          , model_uri.metadata['uri'])\n\n"
+        image: python:3.9
     exec-train:
       container:
         args:
@@ -151,41 +183,40 @@ deploymentSpec:
 
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef train(file_path: InputPath(\"CSV\"), mls3_storage_path: OutputPath(\"\
-          Metrics\")) -> str:\n    import mlflow\n    import mlflow.data\n    import\
-          \ pandas as pd\n    from sklearn.neural_network import MLPClassifier\n \
-          \   from sklearn.model_selection import train_test_split\n    import matplotlib.pyplot\
-          \ as plt\n    import boto3\n    import json\n\n    df = pd.read_csv(file_path)\n\
-          \n    labels_column = \"income\"\n    train_x, test_x, train_y, test_y =\
-          \ train_test_split(\n        df.drop([labels_column], axis=1), \n      \
-          \  df[labels_column], \n        random_state=69\n    )\n\n    dataset =\
-          \ mlflow.data.from_pandas(df, source=file_path)\n\n\n\n    with mlflow.start_run(run_name=\"\
-          income_training\"):\n        alpha, hidden_layers = 1e-3, (10, 6)\n    \
-          \    mlp = MLPClassifier(\n            solver=\"lbfgs\",\n            alpha=alpha,\n\
-          \            hidden_layer_sizes=hidden_layers,\n            random_state=69,\n\
-          \        )\n        mlflow.log_input(dataset, context=\"training\")\n  \
-          \      mlflow.log_param(\"alpha\", alpha)\n        mlflow.log_param(\"hidden_layers\"\
-          , hidden_layers)\n\n        mlp.fit(train_x, train_y)\n\n        preds =\
-          \ mlp.predict(test_x)\n\n        accuracy = (test_y == preds).sum() / preds.shape[0]\n\
-          \        mlflow.log_metric(\"accuracy\", accuracy)\n\n        # Log the\
-          \ trained model artifact\n        result = mlflow.sklearn.log_model(\n \
-          \           sk_model=mlp,\n            artifact_path=\"model\",\n      \
-          \      registered_model_name=\"income_model\",\n        )\n\n        s3_storage\
-          \ = {\n            \"uri\": f\"{mlflow.get_artifact_uri()}/{result.artifact_path}\"\
-          \n        }\n        with open(mls3_storage_path, \"w\") as f:\n       \
-          \     json.dump(s3_storage, f)\n\n        # Convert JSON string to a Python\
-          \ dictionary\n        # executor_output = json.loads(result)\n\n       \
-          \ # # Access the 'Output' value under 'parameterValues'\n        # output_value\
-          \ = executor_output[\"parameterValues\"][\"Output\"]\n        # print(output_value)\n\
-          \n        # Print the output value\n        print(\"WE ARE HERE!!!!\")\n\
-          \        print(type(result))\n        print(\"This is result\", result)\n\
-          \        # Log additional artifacts\n        # For example, log a confusion\
-          \ matrix plot\n        fig, ax = plt.subplots()\n        # Plot confusion\
-          \ matrix here\n        mlflow.log_figure(fig, \"confusion_matrix.png\")\n\
-          \n        # Save any additional files you want to log as artifacts\n   \
-          \     with open(\"additional_file.txt\", \"w\") as f:\n            f.write(\"\
-          Additional artifact content\")\n        mlflow.log_artifact(\"additional_file.txt\"\
-          )\n\n        return f\"{mlflow.get_artifact_uri()}/{result.artifact_path}\"\
+          \ *\n\ndef train(file_path: InputPath(\"CSV\"),  model_uri: Output[Artifact]):\n\
+          \    import mlflow\n    import mlflow.data\n    import pandas as pd\n  \
+          \  from sklearn.neural_network import MLPClassifier\n    from sklearn.model_selection\
+          \ import train_test_split\n    import matplotlib.pyplot as plt\n    import\
+          \ boto3\n    import json\n\n    df = pd.read_csv(file_path)\n\n    labels_column\
+          \ = \"income\"\n    train_x, test_x, train_y, test_y = train_test_split(\n\
+          \        df.drop([labels_column], axis=1), \n        df[labels_column],\
+          \ \n        random_state=69\n    )\n\n    dataset = mlflow.data.from_pandas(df,\
+          \ source=file_path)\n\n\n\n    with mlflow.start_run(run_name=\"income_training\"\
+          ):\n        alpha, hidden_layers = 1e-3, (10, 6)\n        mlp = MLPClassifier(\n\
+          \            solver=\"lbfgs\",\n            alpha=alpha,\n            hidden_layer_sizes=hidden_layers,\n\
+          \            random_state=69,\n        )\n        mlflow.log_input(dataset,\
+          \ context=\"training\")\n        mlflow.log_param(\"alpha\", alpha)\n  \
+          \      mlflow.log_param(\"hidden_layers\", hidden_layers)\n\n        mlp.fit(train_x,\
+          \ train_y)\n\n        preds = mlp.predict(test_x)\n\n        accuracy =\
+          \ (test_y == preds).sum() / preds.shape[0]\n        mlflow.log_metric(\"\
+          accuracy\", accuracy)\n\n        # Log the trained model artifact\n    \
+          \    result = mlflow.sklearn.log_model(\n            sk_model=mlp,\n   \
+          \         artifact_path=\"model\",\n            registered_model_name=\"\
+          income_model\",\n        )\n\n        # Save the model URI to the OutputPath\n\
+          \        model_uri_full = f\"{mlflow.get_artifact_uri()}/model\"\n     \
+          \   with open(model_uri, 'w') as f:\n            f.write(model_uri_full)\n\
+          \n        # Convert JSON string to a Python dictionary\n        # executor_output\
+          \ = json.loads(result)\n\n        # # Access the 'Output' value under 'parameterValues'\n\
+          \        # output_value = executor_output[\"parameterValues\"][\"Output\"\
+          ]\n        # print(output_value)\n\n        # Print the output value\n \
+          \       print(\"WE ARE HERE!!!!\")\n        print(type(result))\n      \
+          \  print(\"This is result\", result)\n        # Log additional artifacts\n\
+          \        # For example, log a confusion matrix plot\n        fig, ax = plt.subplots()\n\
+          \        # Plot confusion matrix here\n        mlflow.log_figure(fig, \"\
+          confusion_matrix.png\")\n\n        # Save any additional files you want\
+          \ to log as artifacts\n        with open(\"additional_file.txt\", \"w\"\
+          ) as f:\n            f.write(\"Additional artifact content\")\n        mlflow.log_artifact(\"\
+          additional_file.txt\")\n\n        return f\"{mlflow.get_artifact_uri()}/{result.artifact_path}\"\
           \n\n"
         env:
         - name: MLFLOW_TRACKING_URI
@@ -203,12 +234,6 @@ pipelineInfo:
   name: income-pipeline
 root:
   dag:
-    outputs:
-      artifacts:
-        train-mls3_storage_path:
-          artifactSelectors:
-          - outputArtifactKey: mls3_storage_path
-            producerSubtask: train
     tasks:
       download-dataset:
         cachingOptions:
@@ -236,6 +261,21 @@ root:
                 producerTask: download-dataset
         taskInfo:
           name: preprocess
+      print-uri:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-print-uri
+        dependentTasks:
+        - train
+        inputs:
+          artifacts:
+            model_uri:
+              taskOutputArtifact:
+                outputArtifactKey: model_uri
+                producerTask: train
+        taskInfo:
+          name: print-uri
       train:
         cachingOptions:
           enableCache: true
@@ -251,11 +291,5 @@ root:
                 producerTask: preprocess
         taskInfo:
           name: train
-  outputDefinitions:
-    artifacts:
-      train-mls3_storage_path:
-        artifactType:
-          schemaTitle: system.Metrics
-          schemaVersion: 0.0.1
 schemaVersion: 2.1.0
 sdkVersion: kfp-2.7.0
