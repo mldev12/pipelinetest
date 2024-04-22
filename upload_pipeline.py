@@ -126,7 +126,8 @@ run_id = run.run_id
 # Wait for the pipeline run to complete
 try:
     final_status = client.wait_for_run_completion(run_id, 36000)
-    print(f"Run completed with status: {final_status.run.status}")
+    run = client.get_run(run_id)
+    print(f"Run completed with status: {run.run.status}")
 except TimeoutError as e:
     print(str(e))
 
