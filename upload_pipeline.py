@@ -99,6 +99,19 @@ def get_istio_auth_session(url: str, username: str, password: str) -> dict:
 
     return auth_session
 
+# Function to wait for pipeline run to complete
+def wait_for_run_completion(client: Client, run_id: str, timeout: int = 3600):
+    start_time = time.time()
+    while True:
+        run_detail = client.get_run(run_id)
+        run_status = run_detail.run.status
+        if run_status in ["Succeeded", "Failed", "Skipped"]:
+            return run_status
+        if time.time() - start_time > timeout:
+            raise TimeoutError("Timed out while waiting for the run to complete.")
+        time.sleep(10)  # Check every 10 seconds
+
+
 
 
 import kfp
@@ -122,5 +135,20 @@ pipeline_package_path = '/home/nagesh/Desktop/GoCD/income.yaml'
 
     # Attempt to upload and run the pipeline
 # uploaded_pipeline = client.upload_pipeline(pipeline_package_path, pipeline_name='income-pipeline2')
-client.create_run_from_pipeline_package("income.yaml", arguments={}, namespace="kubeflow-user-example-com")
+run = client.create_run_from_pipeline_package("income.yaml", arguments={}, namespace="kubeflow-user-example-com")
+run_id = run.run_id
+
+# Wait for the pipeline run to complete
+try:
+    final_status = wait_for_run_completion(client, run_id)
+    print(f"Run completed with status: {final_status}")
+except TimeoutError as e:
+    print(str(e))
+
+# If the run was successful, retrieve and handle outputs
+if final_status == "Succeeded":
+    # Fetch run details or specific component outputs as required
+    run_result = client.get_run(run_id)
+    artifact_uri = run_result.run_info  # Adjust based on your needs
+    print("Model artifact URI:", artifact_uri)
 print("Pipeline run started successfully!")
