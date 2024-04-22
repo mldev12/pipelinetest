@@ -141,5 +141,13 @@ if final_state == "SUCCEEDED":
     # Fetch run details or specific component outputs as required
     run_result = client.get_run(run_id)
     # Assuming a V2 engine, artifacts are stored under task details. You may need to adjust based on your SDK version.
-    print(dir(run_result))
+    # Inspect run_details
+if hasattr(run_result, 'run_details'):
+    print("Run Details:")
+    print(run_result.run_details)
+
+# Inspect pipeline_spec
+if hasattr(run_result, 'pipeline_spec'):
+    print("Pipeline Spec:")
+    print(run_result.pipeline_spec)
 
