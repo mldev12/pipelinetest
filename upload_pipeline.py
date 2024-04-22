@@ -129,6 +129,7 @@ try:
     final_status = client.wait_for_run_completion(run_id, 36000)
     print("Here we are!!")
     get_run_response = client.get_run(run_id=run_id)
+    print(get_run_response)
     final_state = get_run_response.state
     print("Here we end!!")
     #run_status = getattr(getattr(get_run_response, "run"), "status")
@@ -152,9 +153,5 @@ if hasattr(run_result, 'pipeline_spec'):
     print("Pipeline Spec:")
     print(run_result.pipeline_spec)
 
-# Inspect pipeline_spec
-if hasattr(run_result, '_run_details'):
-    print("_Run Details:")
-    print(run_result._run_details)
 
 
