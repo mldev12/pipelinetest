@@ -130,7 +130,7 @@ try:
     get_run_response = client.get_run(run_id=run_id)
     print(get_run_response)
     print("Here we end!!")
-    run_status = getattr(getattr(get_run_response, "run"), "status")
+    #run_status = getattr(getattr(get_run_response, "run"), "status")
     print(f"Run completed with status: {status}")
 except TimeoutError as e:
     print(str(e))
