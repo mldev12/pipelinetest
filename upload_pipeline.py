@@ -129,6 +129,7 @@ try:
     final_status = client.wait_for_run_completion(run_id, 36000)
     print("Here we are!!")
     get_run_response = client.get_run(run_id=run_id)
+    print("This is the run id", run_id)
     print(get_run_response)
     final_state = get_run_response.state
     print("Here we end!!")
