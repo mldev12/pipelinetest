@@ -156,3 +156,40 @@ if hasattr(run_result, 'pipeline_spec'):
 
 
 
+
+import boto3
+from botocore.client import Config
+
+# Configuration variables
+endpoint_url = 'http://localhost:9000'  # Change this to your MinIO server's URL
+access_key = 'minio'                   # Your access key
+secret_key = 'minio123'                   # Your secret key
+bucket_name = 'mlpipeline'                     # Bucket name
+object_key = f'v2/artifacts/income-pipeline/{run_id}/train/output_artifact'  # Object key in the bucket
+
+# Create a MinIO client
+client = boto3.client('s3',
+                      endpoint_url=endpoint_url,
+                      aws_access_key_id=access_key,
+                      aws_secret_access_key=secret_key,
+                      config=Config(signature_version='s3v4'),
+                      region_name='us-east-1')  # Adjust the region if necessary
+
+# Function to get and print the content of the file
+def read_and_print_file(bucket, key):
+    try:
+        # Fetch the object from MinIO
+        response = client.get_object(Bucket=bucket, Key=key)
+        # Read the content of the file
+        content = response['Body'].read().decode('utf-8')
+        print(content)
+    except Exception as e:
+        print("Error accessing MinIO: ", e)
+
+# Read and print the file content
+print("This is the s3 endpoint")
+read_and_print_file(bucket_name, object_key)
+
+
+
+
