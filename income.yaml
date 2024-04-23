@@ -40,7 +40,7 @@ components:
             schemaVersion: 0.0.1
     outputDefinitions:
       parameters:
-        str_path:
+        Output:
           parameterType: STRING
 deploymentSpec:
   executors:
@@ -146,33 +146,33 @@ deploymentSpec:
 
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef train(file_path: InputPath(\"CSV\"), str_path: OutputPath(str)):\n\
-          \    import mlflow\n    import mlflow.data\n    import pandas as pd\n  \
-          \  from sklearn.neural_network import MLPClassifier\n    from sklearn.model_selection\
-          \ import train_test_split\n    import matplotlib.pyplot as plt\n    import\
-          \ boto3\n\n    df = pd.read_csv(file_path)\n\n    labels_column = \"income\"\
-          \n    train_x, test_x, train_y, test_y = train_test_split(\n        df.drop([labels_column],\
-          \ axis=1), \n        df[labels_column], \n        random_state=69\n    )\n\
-          \n    dataset = mlflow.data.from_pandas(df, source=file_path)\n\n\n\n  \
-          \  with mlflow.start_run(run_name=\"income_training\"):\n        alpha,\
-          \ hidden_layers = 1e-3, (2, 3)\n        mlp = MLPClassifier(\n         \
-          \   solver=\"lbfgs\",\n            alpha=alpha,\n            hidden_layer_sizes=hidden_layers,\n\
-          \            random_state=69,\n        )\n        mlflow.log_input(dataset,\
-          \ context=\"training\")\n        mlflow.log_param(\"alpha\", alpha)\n  \
-          \      mlflow.log_param(\"hidden_layers\", hidden_layers)\n\n        mlp.fit(train_x,\
-          \ train_y)\n\n        preds = mlp.predict(test_x)\n\n        accuracy =\
-          \ (test_y == preds).sum() / preds.shape[0]\n        mlflow.log_metric(\"\
-          accuracy\", accuracy)\n\n        # Log the trained model artifact\n    \
-          \    result = mlflow.sklearn.log_model(\n            sk_model=mlp,\n   \
-          \         artifact_path=\"model\",\n            registered_model_name=\"\
-          income_model\",\n        )\n\n        # Log additional artifacts\n     \
-          \   # For example, log a confusion matrix plot\n        fig, ax = plt.subplots()\n\
-          \        # Plot confusion matrix here\n        mlflow.log_figure(fig, \"\
-          confusion_matrix.png\")\n\n        # Save any additional files you want\
-          \ to log as artifacts\n        with open(\"additional_file.txt\", \"w\"\
-          ) as f:\n            f.write(\"Additional artifact content\")\n        mlflow.log_artifact(\"\
-          additional_file.txt\")\n\n        str_path = f\"{mlflow.get_artifact_uri()}/{result.artifact_path}\"\
-          \n\n        #return str_path\n\n"
+          \ *\n\ndef train(file_path: InputPath(\"CSV\")) -> str:\n    import mlflow\n\
+          \    import mlflow.data\n    import pandas as pd\n    from sklearn.neural_network\
+          \ import MLPClassifier\n    from sklearn.model_selection import train_test_split\n\
+          \    import matplotlib.pyplot as plt\n    import boto3\n\n    df = pd.read_csv(file_path)\n\
+          \n    labels_column = \"income\"\n    train_x, test_x, train_y, test_y =\
+          \ train_test_split(\n        df.drop([labels_column], axis=1), \n      \
+          \  df[labels_column], \n        random_state=69\n    )\n\n    dataset =\
+          \ mlflow.data.from_pandas(df, source=file_path)\n\n\n\n    with mlflow.start_run(run_name=\"\
+          income_training\"):\n        alpha, hidden_layers = 1e-3, (2, 3)\n     \
+          \   mlp = MLPClassifier(\n            solver=\"lbfgs\",\n            alpha=alpha,\n\
+          \            hidden_layer_sizes=hidden_layers,\n            random_state=69,\n\
+          \        )\n        mlflow.log_input(dataset, context=\"training\")\n  \
+          \      mlflow.log_param(\"alpha\", alpha)\n        mlflow.log_param(\"hidden_layers\"\
+          , hidden_layers)\n\n        mlp.fit(train_x, train_y)\n\n        preds =\
+          \ mlp.predict(test_x)\n\n        accuracy = (test_y == preds).sum() / preds.shape[0]\n\
+          \        mlflow.log_metric(\"accuracy\", accuracy)\n\n        # Log the\
+          \ trained model artifact\n        result = mlflow.sklearn.log_model(\n \
+          \           sk_model=mlp,\n            artifact_path=\"model\",\n      \
+          \      registered_model_name=\"income_model\",\n        )\n\n        # Log\
+          \ additional artifacts\n        # For example, log a confusion matrix plot\n\
+          \        fig, ax = plt.subplots()\n        # Plot confusion matrix here\n\
+          \        mlflow.log_figure(fig, \"confusion_matrix.png\")\n\n        # Save\
+          \ any additional files you want to log as artifacts\n        with open(\"\
+          additional_file.txt\", \"w\") as f:\n            f.write(\"Additional artifact\
+          \ content\")\n        mlflow.log_artifact(\"additional_file.txt\")\n\n\n\
+          \        return f\"{mlflow.get_artifact_uri()}/{result.artifact_path}\"\n\
+          \n"
         env:
         - name: MLFLOW_TRACKING_URI
           value: http://mlflow-server.local
@@ -193,7 +193,7 @@ root:
       parameters:
         Output:
           valueFromParameter:
-            outputParameterKey: str_path
+            outputParameterKey: Output
             producerSubtask: train
     tasks:
       download-dataset:
