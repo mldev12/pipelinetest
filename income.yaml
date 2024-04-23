@@ -172,7 +172,7 @@ deploymentSpec:
           \ to log as artifacts\n        with open(\"additional_file.txt\", \"w\"\
           ) as f:\n            f.write(\"Additional artifact content\")\n        mlflow.log_artifact(\"\
           additional_file.txt\")\n\n        str_path = f\"{mlflow.get_artifact_uri()}/{result.artifact_path}\"\
-          \n\n        return str_path\n\n"
+          \n\n        #return str_path\n\n"
         env:
         - name: MLFLOW_TRACKING_URI
           value: http://mlflow-server.local
