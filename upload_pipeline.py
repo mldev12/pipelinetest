@@ -117,7 +117,7 @@ auth_session = get_istio_auth_session(
 )
 
 client = kfp.Client(host=f"{KUBEFLOW_ENDPOINT}/pipeline", cookies=auth_session["session_cookie"], namespace="kubeflow-user-example-com")
-print(client.list_experiments())
+#print(client.list_experiments())
 
     # Attempt to upload and run the pipeline
 # uploaded_pipeline = client.upload_pipeline(pipeline_package_path, pipeline_name='income-pipeline2')
