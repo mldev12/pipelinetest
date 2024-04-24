@@ -77,6 +77,3 @@ def generate_kubernetes_yaml(model_uri, run_id):
     with open('kubernetes_resources.yaml', 'w') as f:
         yaml.dump(kubernetes_resources, f)
 
-# Example usage
-# This assumes `model_uri` and `run_id` are defined elsewhere in your script
-generate_kubernetes_yaml(model_uri, run_id)
