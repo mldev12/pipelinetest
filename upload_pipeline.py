@@ -5,7 +5,7 @@ from kfp import Client, compiler
 from kfp.dsl import pipeline
 import time
 import json
-from seldon import generate_kubernetes_yaml
+from seldon import *
 
 def get_istio_auth_session(url: str, username: str, password: str) -> dict:
     """
