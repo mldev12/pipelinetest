@@ -192,4 +192,5 @@ read_and_print_file(bucket_name, object_key)
 
 
 
+import seldon
 
