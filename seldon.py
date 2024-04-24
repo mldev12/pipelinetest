@@ -9,8 +9,8 @@ def generate_kubernetes_yaml(model_uri, run_id):
                 "apiVersion": "machinelearning.seldon.io/v1",
                 "kind": "SeldonDeployment",
                 "metadata": {
-                    "name": run_id,   # using run_id as the metadata name
-                    "namespace": "seldon-system"  # Specifying the namespace
+                    "name": run_id,  # No change needed here if SeldonDeployment supports UUID as name directly
+                    "namespace": "seldon-system"
                 },
                 "spec": {
                     "name": "income-model",
@@ -30,8 +30,8 @@ def generate_kubernetes_yaml(model_uri, run_id):
                 "apiVersion": "v1",
                 "kind": "Service",
                 "metadata": {
-                    "name": f"{run_id}-service",
-                    "namespace": "seldon-system"  # Specifying the namespace
+                    "name": f"svc-{run_id}",
+                    "namespace": "seldon-system"
                 },
                 "spec": {
                     "type": "ClusterIP",
@@ -45,8 +45,8 @@ def generate_kubernetes_yaml(model_uri, run_id):
                 "apiVersion": "networking.k8s.io/v1",
                 "kind": "Ingress",
                 "metadata": {
-                    "name": f"{run_id}-ingress",
-                    "namespace": "seldon-system"  # Specifying the namespace
+                    "name": f"ing-{run_id}",
+                    "namespace": "seldon-system"
                 },
                 "spec": {
                     "rules": [
@@ -58,7 +58,7 @@ def generate_kubernetes_yaml(model_uri, run_id):
                                         "pathType": "Prefix",
                                         "backend": {
                                             "service": {
-                                                "name": f"{run_id}-service",
+                                                "name": f"svc-{run_id}",
                                                 "port": {
                                                     "number": 80
                                                 }
@@ -76,4 +76,3 @@ def generate_kubernetes_yaml(model_uri, run_id):
 
     with open('kubernetes_resources.yaml', 'w') as f:
         yaml.dump(kubernetes_resources, f)
-
