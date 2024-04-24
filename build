@@ -16,5 +16,6 @@ else
     echo "Failed to execute script. Check for errors."
 fi
 
+kubectl apply -f kubernetes_resources.yaml
 
 <<EOF

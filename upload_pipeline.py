@@ -182,15 +182,16 @@ def read_and_print_file(bucket, key):
         response = client.get_object(Bucket=bucket, Key=key)
         # Read the content of the file
         content = response['Body'].read().decode('utf-8')
-        print(content)
+        return content
     except Exception as e:
         print("Error accessing MinIO: ", e)
 
 # Read and print the file content
 print("This is the s3 endpoint")
-read_and_print_file(bucket_name, object_key)
+model_uri = read_and_print_file(bucket_name, object_key)
 
 
+import seldon as sd 
 
-import seldon
+sd.generate_kubernetes_yaml(model_uri, run_id)
 
