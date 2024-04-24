@@ -192,5 +192,5 @@ print("This is the s3 endpoint")
 model_uri = read_and_print_file(bucket_name, object_key)
 print("This is model uri", model_uri)
 
-sd.generate_kubernetes_yaml(model_uri, run_id)
+# sd.generate_kubernetes_yaml(model_uri, run_id)
 
