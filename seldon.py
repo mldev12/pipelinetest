@@ -6,10 +6,10 @@ def generate_kubernetes_yaml(model_uri, run_id):
         "kind": "List",
         "items": [
             {
-                "apiVersion": "machinelearning.seldon.io/v1",
+                "apiVersion": "machinelearning.seldon.io/v1alpha2",
                 "kind": "SeldonDeployment",
                 "metadata": {
-                    "name": run_id,  # No change needed here if SeldonDeployment supports UUID as name directly
+                    "name": run_id,  # UUID as a direct name
                     "namespace": "seldon-system"
                 },
                 "spec": {
@@ -19,35 +19,48 @@ def generate_kubernetes_yaml(model_uri, run_id):
                             "children": [],
                             "implementation": "MLFLOW_SERVER",
                             "modelUri": model_uri,
-                            "envSecretRefName": seldon-init-container-secret
+                            "envSecretRefName": "seldon-init-container-secret",  # Reference to your Kubernetes Secret
                             "name": "mlflow-model"
                         },
                         "name": "default",
                         "replicas": 1,
-                        "componentSpecs":,
-                        - "spec":,
-                            "containers":,
-                            - "name": "classifier",
-                                "image": "seldonio/mlflowserver:latest",
-                                "livenessProbe":,
-                                    "failureThreshold": 3,
-                                    "initialDelaySeconds": 5000,
-                                    "periodSeconds": 5,
-                                    "successThreshold": 1,
-                                    "tcpSocket":,
-                                        "port": "http",
-                                    "timeoutSeconds": 1,
-                                "readinessProbe":,
-                                    "failureThreshold": 3,
-                                    "initialDelaySeconds": 5000,
-                                    "periodSeconds": 5,
-                                    "successThreshold": 1,
-                                    "tcpSocket":,
-                                        "port": "http",
-                                    "timeoutSeconds": 1
+                        "componentSpecs": [{
+                            "spec": {
+                                "containers": [{
+                                    "name": "classifier",
+                                    "image": "seldonio/mlflowserver:latest",
+                                    "envFrom": [{
+                                        "secretRef": {
+                                            "name": "seldon-init-container-secret"  # Ensure this secret exists in your namespace
+                                        }
+                                    }],
+                                    "livenessProbe": {
+                                        "failureThreshold": 3,
+                                        "initialDelaySeconds": 5000,
+                                        "periodSeconds": 5,
+                                        "successThreshold": 1,
+                                        "tcpSocket": {
+                                            "port": "http"
+                                        },
+                                        "timeoutSeconds": 1
+                                    },
+                                    "readinessProbe": {
+                                        "failureThreshold": 3,
+                                        "initialDelaySeconds": 5000,
+                                        "periodSeconds": 5,
+                                        "successThreshold": 1,
+                                        "tcpSocket": {
+                                            "port": "http"
+                                        },
+                                        "timeoutSeconds": 1
+                                    }
+                                }]
+                            }
+                        }]
                     }]
                 }
             },
+            # Service and Ingress definitions remain unchanged
             {
                 "apiVersion": "v1",
                 "kind": "Service",
@@ -98,3 +111,6 @@ def generate_kubernetes_yaml(model_uri, run_id):
 
     with open('kubernetes_resources.yaml', 'w') as f:
         yaml.dump(kubernetes_resources, f)
+
+# Example usage
+# Assuming model_uri and run
