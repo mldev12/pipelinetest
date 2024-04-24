@@ -5,6 +5,7 @@ from kfp import Client, compiler
 from kfp.dsl import pipeline
 import time
 import json
+import seldon as sd 
 
 def get_istio_auth_session(url: str, username: str, password: str) -> dict:
     """
@@ -191,8 +192,5 @@ print("This is the s3 endpoint")
 model_uri = read_and_print_file(bucket_name, object_key)
 print("This is model uri", model_uri)
 
-
-# import seldon as sd 
-
-# sd.generate_kubernetes_yaml(model_uri, run_id)
+sd.generate_kubernetes_yaml(model_uri, run_id)
 
