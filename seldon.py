@@ -9,7 +9,8 @@ def generate_kubernetes_yaml(model_uri, run_id):
                 "apiVersion": "machinelearning.seldon.io/v1",
                 "kind": "SeldonDeployment",
                 "metadata": {
-                    "name": run_id   # using run_id as the metadata name
+                    "name": run_id,   # using run_id as the metadata name
+                    "namespace": "seldon-system"  # Specifying the namespace
                 },
                 "spec": {
                     "name": "income-model",
@@ -29,7 +30,8 @@ def generate_kubernetes_yaml(model_uri, run_id):
                 "apiVersion": "v1",
                 "kind": "Service",
                 "metadata": {
-                    "name": f"{run_id}-service"
+                    "name": f"{run_id}-service",
+                    "namespace": "seldon-system"  # Specifying the namespace
                 },
                 "spec": {
                     "type": "ClusterIP",
@@ -43,7 +45,8 @@ def generate_kubernetes_yaml(model_uri, run_id):
                 "apiVersion": "networking.k8s.io/v1",
                 "kind": "Ingress",
                 "metadata": {
-                    "name": f"{run_id}-ingress"
+                    "name": f"{run_id}-ingress",
+                    "namespace": "seldon-system"  # Specifying the namespace
                 },
                 "spec": {
                     "rules": [
@@ -75,4 +78,5 @@ def generate_kubernetes_yaml(model_uri, run_id):
         yaml.dump(kubernetes_resources, f)
 
 # Example usage
+# This assumes `model_uri` and `run_id` are defined elsewhere in your script
 generate_kubernetes_yaml(model_uri, run_id)
