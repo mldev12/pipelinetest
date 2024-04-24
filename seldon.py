@@ -19,10 +19,32 @@ def generate_kubernetes_yaml(model_uri, run_id):
                             "children": [],
                             "implementation": "MLFLOW_SERVER",
                             "modelUri": model_uri,
+                            "envSecretRefName": seldon-init-container-secret
                             "name": "mlflow-model"
                         },
                         "name": "default",
                         "replicas": 1,
+                        "componentSpecs":,
+                        - "spec":,
+                            "containers":,
+                            - "name": "classifier",
+                                "image": "seldonio/mlflowserver:latest",
+                                "livenessProbe":,
+                                    "failureThreshold": 3,
+                                    "initialDelaySeconds": 5000,
+                                    "periodSeconds": 5,
+                                    "successThreshold": 1,
+                                    "tcpSocket":,
+                                        "port": "http",
+                                    "timeoutSeconds": 1,
+                                "readinessProbe":,
+                                    "failureThreshold": 3,
+                                    "initialDelaySeconds": 5000,
+                                    "periodSeconds": 5,
+                                    "successThreshold": 1,
+                                    "tcpSocket":,
+                                        "port": "http",
+                                    "timeoutSeconds": 1
                     }]
                 }
             },
