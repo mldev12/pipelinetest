@@ -1,9 +1,6 @@
 #!/bin/bash
 
-echo "Let us pretend that this is building something ... and takes 20 seconds"
-
-# Sleep for 20 seconds to simulate the build time
-sleep 20
+echo "Waiting for Agent!"
 
 # Execute the Python script and capture its output
 output=$(python3 upload_pipeline.py)
@@ -16,6 +13,11 @@ else
     echo "Failed to execute script. Check for errors."
 fi
 
+echo "Pipeline Built, Deployment Spec Generated!"
+
 kubectl apply -f kubernetes_resources.yaml
+
+echo "Deployment Spec Applied, modelled being provisioned!"
+
 
 <<EOF
