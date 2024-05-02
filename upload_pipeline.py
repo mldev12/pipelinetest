@@ -162,7 +162,7 @@ import boto3
 from botocore.client import Config
 
 # Configuration variables
-endpoint_url = 'http://10.98.187.242:9000'  # Change this to your MinIO server's URL
+endpoint_url = 'http://10.105.239.157:9000'  # Change this to your MinIO server's URL
 access_key = 'minio'                   # Your access key
 secret_key = 'minio123'                   # Your secret key
 bucket_name = 'mlpipeline'                     # Bucket name
