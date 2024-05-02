@@ -16,7 +16,11 @@ def generate_kubernetes_yaml(model_uri, run_id):
                     "implementation": "MLFLOW_SERVER",
                     "modelUri": model_uri,
                     "envSecretRefName": "seldon-init-container-secret",
-                    "name": "mlflow-model"
+                    "name": "mlflow-model",
+                    "parameters":
+                        "name": "xtype"
+                        "type": "STRING"
+                        "value": "DataFrame"
                 },
                 "name": "default",
                 "replicas": 1,
