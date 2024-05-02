@@ -18,7 +18,7 @@ def generate_kubernetes_yaml(model_uri, run_id):
                         "graph": {
                             "children": [],
                             "implementation": "MLFLOW_SERVER",
-                            "modelUri": model_uri.replace(",", "")),
+                            "modelUri": model_uri.replace(""", "")),
                             "envSecretRefName": "seldon-init-container-secret",
                             "name": "mlflow-model"
                         },
