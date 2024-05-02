@@ -27,8 +27,8 @@ def generate_kubernetes_yaml(model_uri, run_id):
                             "image": "seldonio/mlflowserver:latest",
                             "livenessProbe": {
                                 "failureThreshold": 3,
-                                "initialDelaySeconds": 5000,
-                                "periodSeconds": 5,
+                                "initialDelaySeconds": 10000,
+                                "periodSeconds": 50,
                                 "successThreshold": 1,
                                 "tcpSocket": {
                                     "port": "http"
@@ -37,8 +37,8 @@ def generate_kubernetes_yaml(model_uri, run_id):
                             },
                             "readinessProbe": {
                                 "failureThreshold": 3,
-                                "initialDelaySeconds": 5000,
-                                "periodSeconds": 5,
+                                "initialDelaySeconds": 10000,
+                                "periodSeconds": 50,
                                 "successThreshold": 1,
                                 "tcpSocket": {
                                     "port": "http"
