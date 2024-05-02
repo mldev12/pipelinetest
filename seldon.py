@@ -1,3 +1,5 @@
+import yaml
+
 def generate_kubernetes_yaml(model_uri, run_id):
     kubernetes_resources = {
         "apiVersion": "v1",
