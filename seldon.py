@@ -16,11 +16,7 @@ def generate_kubernetes_yaml(model_uri, run_id):
                     "implementation": "MLFLOW_SERVER",
                     "modelUri": model_uri,
                     "envSecretRefName": "seldon-init-container-secret",
-                    "name": "mlflow-model",
-                    "parameters":
-                        "name": "xtype"
-                        "type": "STRING"
-                        "value": "DataFrame"
+                    "name": "classifier"
                 },
                 "name": "default",
                 "replicas": 1,
@@ -29,11 +25,6 @@ def generate_kubernetes_yaml(model_uri, run_id):
                         "containers": [{
                             "name": "classifier",
                             "image": "seldonio/mlflowserver:latest",
-                            "envFrom": [{
-                                "secretRef": {
-                                    "name": "seldon-init-container-secret"
-                                }
-                            }],
                             "livenessProbe": {
                                 "failureThreshold": 3,
                                 "initialDelaySeconds": 5000,
@@ -61,8 +52,9 @@ def generate_kubernetes_yaml(model_uri, run_id):
         }
     }
 
+    # Writing to a YAML file
     with open('kubernetes_resources.yaml', 'w') as f:
         yaml.dump(kubernetes_resources, f)
 
 # Example usage
-# generate_kubernetes_yaml("s3://example-model-uri", "12345")
+#generate_kubernetes_yaml("s3://mlflow/0/4435bc456bc54879a09f9518c296d4f9/artifacts/model", "test3")
