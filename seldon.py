@@ -26,24 +26,26 @@ def generate_kubernetes_yaml(model_uri, run_id):
                             "name": "classifier",
                             "image": "seldonio/mlflowserver:latest",
                             "livenessProbe": {
-                                "failureThreshold": 3,
-                                "initialDelaySeconds": 10000,
-                                "periodSeconds": 120,
+                                "initialDelaySeconds": 80,
+                                "failureThreshold": 200,
+                                "periodSeconds": 5,
                                 "successThreshold": 1,
-                                "tcpSocket": {
-                                    "port": "http"
-                                },
-                                "timeoutSeconds": 10
+                                "httpGet": {
+                                    "path": "/health/ping",
+                                    "port": "http",
+                                    "scheme": "HTTP"
+                                }
                             },
                             "readinessProbe": {
-                                "failureThreshold": 3,
-                                "initialDelaySeconds": 10000,
-                                "periodSeconds": 120,
+                                "initialDelaySeconds": 80,
+                                "failureThreshold": 200,
+                                "periodSeconds": 5,
                                 "successThreshold": 1,
-                                "tcpSocket": {
-                                    "port": "http"
-                                },
-                                "timeoutSeconds": 10
+                                "httpGet": {
+                                    "path": "/health/ping",
+                                    "port": "http",
+                                    "scheme": "HTTP"
+                                }
                             }
                         }]
                     }
@@ -57,4 +59,4 @@ def generate_kubernetes_yaml(model_uri, run_id):
         yaml.dump(kubernetes_resources, f)
 
 # Example usage
-#generate_kubernetes_yaml("s3://mlflow/0/4435bc456bc54879a09f9518c296d4f9/artifacts/model", "test3")
+#generate_kubernetes_yaml("s3://mlflow/0/9728e59a56a54d4d869bc7134176cadc/artifacts/model", "test")
