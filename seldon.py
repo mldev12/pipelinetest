@@ -33,7 +33,7 @@ def generate_kubernetes_yaml(model_uri, run_id):
                                 "tcpSocket": {
                                     "port": "http"
                                 },
-                                "timeoutSeconds": 1
+                                "timeoutSeconds": 10
                             },
                             "readinessProbe": {
                                 "failureThreshold": 3,
@@ -43,7 +43,7 @@ def generate_kubernetes_yaml(model_uri, run_id):
                                 "tcpSocket": {
                                     "port": "http"
                                 },
-                                "timeoutSeconds": 1
+                                "timeoutSeconds": 10
                             }
                         }]
                     }
