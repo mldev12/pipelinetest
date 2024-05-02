@@ -26,7 +26,7 @@ def generate_kubernetes_yaml(model_uri, run_id):
                             "name": "classifier",
                             "image": "seldonio/mlflowserver:latest",
                             "livenessProbe": {
-                                "initialDelaySeconds": 10000,
+                                "initialDelaySeconds": 80,
                                 "failureThreshold": 200,
                                 "periodSeconds": 5,
                                 "successThreshold": 1,
@@ -37,7 +37,7 @@ def generate_kubernetes_yaml(model_uri, run_id):
                                 }
                             },
                             "readinessProbe": {
-                                "initialDelaySeconds": 10000,
+                                "initialDelaySeconds": 80,
                                 "failureThreshold": 200,
                                 "periodSeconds": 5,
                                 "successThreshold": 1,
