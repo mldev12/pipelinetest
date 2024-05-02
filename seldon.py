@@ -9,7 +9,7 @@ def generate_kubernetes_yaml(model_uri, run_id):
                 "apiVersion": "machinelearning.seldon.io/v1alpha2",
                 "kind": "SeldonDeployment",
                 "metadata": {
-                    "name": run_id,  # UUID as a direct name
+                    "name": f"sdp-{run_id}",  # UUID as a direct name
                     "namespace": "seldon-system"
                 },
                 "spec": {
