@@ -192,7 +192,8 @@ root:
   dag:
     tasks:
       download-dataset:
-        cachingOptions: {}
+        cachingOptions:
+          enableCache: true
         componentRef:
           name: comp-download-dataset
         inputs:
@@ -203,7 +204,8 @@ root:
         taskInfo:
           name: download-dataset
       preprocess:
-        cachingOptions: {}
+        cachingOptions:
+          enableCache: true
         componentRef:
           name: comp-preprocess
         dependentTasks:
