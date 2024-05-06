@@ -166,7 +166,7 @@ endpoint_url = 'http://10.105.239.157:9000'  # Change this to your MinIO server'
 access_key = 'minio'                   # Your access key
 secret_key = 'minio123'                   # Your secret key
 bucket_name = 'mlpipeline'                     # Bucket name
-object_key = f'v2/artifacts/price-adjustment-pipeline/{run_id}/train/output_artifact'  # Object key in the bucket
+object_key = f'v2/artifacts/price-adjustment-pipeline/{run_id}/train-model/output_artifact'  # Object key in the bucket
 
 # Create a MinIO client
 client = boto3.client('s3',
