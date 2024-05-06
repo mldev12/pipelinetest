@@ -121,7 +121,7 @@ deploymentSpec:
           \ remove_duplicates:\n            df = df.drop_duplicates()\n\n        return\
           \ df\n\n    df_final = clean_and_convert(\n        df,\n        date_cols=['paydate'],\n\
           \        numeric_cols=['a-escuam', 'term', 'dummy', 'no']\n    )\n\n   \
-          \ df_final.to_csv(output_file, index=False)\n\n"
+          \ df_final.to_csv(output_file, index=False)\n\n\n"
         image: python:3.9
     exec-train-model:
       container:
