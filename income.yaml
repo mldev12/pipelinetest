@@ -155,31 +155,24 @@ deploymentSpec:
           \  from sklearn.preprocessing import StandardScaler\n    from sklearn.ensemble\
           \ import GradientBoostingRegressor\n    from sklearn.pipeline import Pipeline\n\
           \    from sklearn.model_selection import train_test_split\n    from sklearn.metrics\
-          \ import mean_squared_error\n\n    df = pd.read_csv(file_path)\n\n    #\
-          \ Redefine feature set without 'lapsed_day'\n    refined_features = ['a-escuam',\
-          \ 'term', 'dummy', 'no']\n\n    # Create a refined feature matrix\n    X_refined\
-          \ = df[refined_features].fillna(0)\n\n    # Scale features\n    scaler_refined\
-          \ = StandardScaler()\n    X_refined_scaled = scaler_refined.fit_transform(X_refined)\n\
-          \    y = df['lapsed_day'].copy()\n    y = y.loc[X_refined_scaled.index]\n\
-          \n\n\n    mlflow.log_param('learning_rate', 0.2)\n    mlflow.log_param('max_depth',\
-          \ 3)\n    mlflow.log_param('n_estimators', 200)\n\n\n\n    pipeline = Pipeline([\n\
-          \        ('scaler', StandardScaler()),\n        ('model', GradientBoostingRegressor(random_state=42,\
-          \ learning_rate=0.2, max_depth=3, n_estimators=200))\n    ])\n\n    # Split\
-          \ data into training (70%), validation (20%), and testing (10%) with the\
-          \ refined features\n    X_train_refined, X_temp_refined, y_train_refined,\
-          \ y_temp_refined = train_test_split(\n        X_refined_scaled, y, test_size=0.3,\
-          \ random_state=42\n    )\n    X_val_refined, X_test_refined, y_val_refined,\
-          \ y_test_refined = train_test_split(\n        X_temp_refined, y_temp_refined,\
-          \ test_size=(1/3), random_state=42\n    )\n\n    # Train the new model on\
-          \ the refined training set\n    pipeline.fit(X_train_refined, y_train_refined)\n\
-          \n    # Predict on the refined validation set\n    y_val_pred_refined =\
-          \ pipeline.predict(X_val_refined)\n\n    # Calculate performance on the\
-          \ validation set\n    val_rmse = np.sqrt(mean_squared_error(y_val_refined,\
-          \ y_val_pred_refined))\n    # Log model to MLflow\n    with mlflow.start_run(run_name=\"\
-          Gradient Boosting Regressor\"):\n        mlflow.log_metric(\"mse\",val_rmse)\n\
-          \        mlflow.sklearn.log_model(pipeline, \"model\")\n        data = f\"\
-          {mlflow.get_artifact_uri()}/model\"\n        with open(output_artifact.path,\
-          \ 'w') as f:\n            f.write(data)\n\n"
+          \ import mean_squared_error\n\n    df = pd.read_csv(file_path)\n\n\n   \
+          \ learning_rate=0.2\n    max_depth=3\n    n_estimators=200\n\n\n    # Redefine\
+          \ feature set without 'lapsed_day'\n    refined_features = ['a-escuam',\
+          \ 'term', 'dummy', 'no']\n    X = df[refined_features].fillna(0)\n    y\
+          \ = df['lapsed_day']\n\n    pipeline = Pipeline([\n        ('scaler', StandardScaler()),\n\
+          \        ('model', GradientBoostingRegressor(random_state=42, learning_rate=learning_rate,\
+          \ max_depth=max_depth, n_estimators=n_estimators))\n    ])\n\n    # Split\
+          \ data\n    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2,\
+          \ random_state=42)\n\n    # Train the model\n    with mlflow.start_run(run_name=\"\
+          Gradient Boosting Regressor\"):\n        pipeline.fit(X_train, y_train)\n\
+          \        y_pred = pipeline.predict(X_test)\n        rmse = np.sqrt(mean_squared_error(y_test,\
+          \ y_pred))\n\n        mlflow.log_params({'learning_rate': learning_rate,\
+          \ 'max_depth': max_depth, 'n_estimators': n_estimators})\n        mlflow.log_metric(\"\
+          rmse\", rmse)\n        mlflow.sklearn.log_model(pipeline, \"model\")\n\n\
+          \        # Optional: Write the model path to an output file\n        mlflow.get_artifact_uri(\"\
+          model\")\n        data = f\"{mlflow.get_artifact_uri()}/model\"\n      \
+          \  with open(output_artifact.path, 'w') as f:\n            f.write(data)\n\
+          \n"
         env:
         - name: MLFLOW_TRACKING_URI
           value: http://mlflow-server.local
