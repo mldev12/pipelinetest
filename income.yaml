@@ -169,10 +169,9 @@ deploymentSpec:
           \ y_pred))\n\n        mlflow.log_params({'learning_rate': learning_rate,\
           \ 'max_depth': max_depth, 'n_estimators': n_estimators})\n        mlflow.log_metric(\"\
           rmse\", rmse)\n        mlflow.sklearn.log_model(pipeline, \"model\")\n\n\
-          \        # Optional: Write the model path to an output file\n        mlflow.get_artifact_uri(\"\
-          model\")\n        data = f\"{mlflow.get_artifact_uri()}/model\"\n      \
-          \  with open(output_artifact.path, 'w') as f:\n            f.write(data)\n\
-          \n"
+          \        # Optional: Write the model path to an output file\n        data\
+          \ = f\"{mlflow.get_artifact_uri()}/model\"\n        with open(output_artifact.path,\
+          \ 'w') as f:\n            f.write(data)\n\n"
         env:
         - name: MLFLOW_TRACKING_URI
           value: http://mlflow-server.local
