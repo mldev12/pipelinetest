@@ -1,12 +1,17 @@
 # PIPELINE DEFINITION
-# Name: income-pipeline
-# Description: Pipeline for training and deploying a model trained on Census Income dataset
+# Name: price-adjustment-pipeline
+# Description: Pipeline for predicting price adjustments.
+# Inputs:
+#    bucket: str [Default: 'retail-dataset']
+#    object_key: str [Default: 'Fact_Collection_202404291553.csv']
 components:
   comp-download-dataset:
     executorLabel: exec-download-dataset
     inputDefinitions:
       parameters:
-        url:
+        bucket_name:
+          parameterType: STRING
+        object_key:
           parameterType: STRING
     outputDefinitions:
       artifacts:
@@ -14,8 +19,8 @@ components:
           artifactType:
             schemaTitle: system.Artifact
             schemaVersion: 0.0.1
-  comp-preprocess:
-    executorLabel: exec-preprocess
+  comp-preprocess-and-feature-engineering:
+    executorLabel: exec-preprocess-and-feature-engineering
     inputDefinitions:
       artifacts:
         file_path:
@@ -28,8 +33,8 @@ components:
           artifactType:
             schemaTitle: system.Artifact
             schemaVersion: 0.0.1
-  comp-train:
-    executorLabel: exec-train
+  comp-train-model:
+    executorLabel: exec-train-model
     inputDefinitions:
       artifacts:
         file_path:
@@ -58,7 +63,7 @@ deploymentSpec:
           \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
           \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0'\
           \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
-          \  python3 -m pip install --quiet --no-warn-script-location 'requests' 'mlflow'\
+          \  python3 -m pip install --quiet --no-warn-script-location 'pandas' 'boto3'\
           \ && \"$0\" \"$@\"\n"
         - sh
         - -ec
@@ -71,19 +76,19 @@ deploymentSpec:
 
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef download_dataset(url: str, output_file: OutputPath()):\n    import\
-          \ requests  # Import requests inside the function\n\n    # Use requests.get()\
-          \ to download the file\n    response = requests.get(url)\n    response.raise_for_status()\
-          \  # Raise an exception for HTTP errors\n    with open(output_file, 'wb')\
-          \ as f:\n        f.write(response.content)\n\n"
+          \ *\n\ndef download_dataset(bucket_name: str, object_key: str, output_file:\
+          \ OutputPath(\"CSV\")):\n    import boto3\n    s3 = boto3.client('s3', endpoint_url='http://mlflow-minio.local:30869/',\n\
+          \                      aws_access_key_id='minio', \n                   \
+          \   aws_secret_access_key='minio123')\n    s3.download_file(bucket_name,\
+          \ object_key, output_file)\n\n"
         image: python:3.9
-    exec-preprocess:
+    exec-preprocess-and-feature-engineering:
       container:
         args:
         - --executor_input
         - '{{$}}'
         - --function_to_execute
-        - preprocess
+        - preprocess_and_feature_engineering
         command:
         - sh
         - -c
@@ -91,7 +96,7 @@ deploymentSpec:
           \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
           \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0'\
           \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
-          \  python3 -m pip install --quiet --no-warn-script-location 'pandas' 'mlflow'\
+          \  python3 -m pip install --quiet --no-warn-script-location 'pandas' 'numpy'\
           \ && \"$0\" \"$@\"\n"
         - sh
         - -ec
@@ -104,28 +109,27 @@ deploymentSpec:
 
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef preprocess(file_path: InputPath(\"CSV\"), output_file: OutputPath(\"\
-          CSV\")):\n    import pandas as pd\n\n    header = [\n        \"age\",\n\
-          \        \"workclass\",\n        \"fnlwgt\",\n        \"education\",\n \
-          \       \"education_num\",\n        \"marital_status\",\n        \"occupation\"\
-          ,\n        \"relationship\",\n        \"race\",\n        \"sex\",\n    \
-          \    \"capital_gain\",\n        \"capital_loss\",\n        \"hours_per_week\"\
-          ,\n        \"native_country\",\n        \"income\",\n    ]\n    df = pd.read_csv(file_path,\
-          \ header=None, names=header)\n    # encode categorical data as integers\n\
-          \    categorical_columns = [\n        \"age\",\n        \"workclass\",\n\
-          \        \"education\",\n        \"marital_status\",\n        \"occupation\"\
-          ,\n        \"relationship\",\n        \"race\",\n        \"sex\",\n    \
-          \    \"native_country\",\n        \"income\",\n    ]\n    df[categorical_columns]\
-          \ = df[categorical_columns].apply(\n        lambda x: x.astype(\"category\"\
-          ).cat.codes, axis=0\n    )\n\n    df.to_csv(output_file, index=False)\n\n"
+          \ *\n\ndef preprocess_and_feature_engineering(file_path: InputPath(\"CSV\"\
+          ), output_file: OutputPath(\"CSV\")):\n    import pandas as pd\n    import\
+          \ numpy as np\n    df = pd.read_csv(file_path)\n\n    # Convert dates and\
+          \ extract components\n    def clean_and_convert(df, date_cols=[], numeric_cols=[],\
+          \ remove_duplicates=True):\n        # Convert date columns to datetime\n\
+          \        for col in date_cols:\n            df[col] = pd.to_datetime(df[col],\
+          \ errors='coerce')\n\n        # Convert numeric columns to floats (ignoring\
+          \ errors)\n        for col in numeric_cols:\n            df[col] = pd.to_numeric(df[col],\
+          \ errors='coerce')\n\n        # Remove duplicates if required\n        if\
+          \ remove_duplicates:\n            df = df.drop_duplicates()\n\n        return\
+          \ df\n\n    df_final = clean_and_convert(\n        df,\n        date_cols=['paydate'],\n\
+          \        numeric_cols=['a-escuam', 'term', 'dummy', 'no']\n    )\n\n   \
+          \ df_final.to_csv(output_file, index=False)\n\n"
         image: python:3.9
-    exec-train:
+    exec-train-model:
       container:
         args:
         - --executor_input
         - '{{$}}'
         - --function_to_execute
-        - train
+        - train_model
         command:
         - sh
         - -c
@@ -133,8 +137,8 @@ deploymentSpec:
           \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
           \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0'\
           \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
-          \  python3 -m pip install --quiet --no-warn-script-location 'mlflow' 'pandas'\
-          \ 'scikit-learn' 'boto3' && \"$0\" \"$@\"\n"
+          \  python3 -m pip install --quiet --no-warn-script-location 'pandas' 'scikit-learn'\
+          \ 'mlflow' 'boto3' 'numpy' && \"$0\" \"$@\"\n"
         - sh
         - -ec
         - 'program_path=$(mktemp -d)
@@ -146,33 +150,33 @@ deploymentSpec:
 
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef train(file_path: InputPath(\"CSV\"), output_artifact: Output[Artifact]):\n\
-          \    import mlflow\n    import mlflow.data\n    import pandas as pd\n  \
-          \  from sklearn.neural_network import MLPClassifier\n    from sklearn.model_selection\
-          \ import train_test_split\n    import matplotlib.pyplot as plt\n    import\
-          \ boto3\n\n    df = pd.read_csv(file_path)\n\n    labels_column = \"income\"\
-          \n    train_x, test_x, train_y, test_y = train_test_split(\n        df.drop([labels_column],\
-          \ axis=1), \n        df[labels_column], \n        random_state=69\n    )\n\
-          \n    dataset = mlflow.data.from_pandas(df, source=file_path)\n\n\n\n  \
-          \  with mlflow.start_run(run_name=\"income_training\"):\n        alpha,\
-          \ hidden_layers = 1e-3, (2, 3)\n        mlp = MLPClassifier(\n         \
-          \   solver=\"lbfgs\",\n            alpha=alpha,\n            hidden_layer_sizes=hidden_layers,\n\
-          \            random_state=69,\n        )\n        mlflow.log_input(dataset,\
-          \ context=\"training\")\n        mlflow.log_param(\"alpha\", alpha)\n  \
-          \      mlflow.log_param(\"hidden_layers\", hidden_layers)\n\n        mlp.fit(train_x,\
-          \ train_y)\n\n        preds = mlp.predict(test_x)\n\n        accuracy =\
-          \ (test_y == preds).sum() / preds.shape[0]\n        mlflow.log_metric(\"\
-          accuracy\", accuracy)\n\n        # Log the trained model artifact\n    \
-          \    result = mlflow.sklearn.log_model(\n            sk_model=mlp,\n   \
-          \         artifact_path=\"model\",\n            registered_model_name=\"\
-          income_model\",\n        )\n\n        # Log additional artifacts\n     \
-          \   # For example, log a confusion matrix plot\n        fig, ax = plt.subplots()\n\
-          \        # Plot confusion matrix here\n        mlflow.log_figure(fig, \"\
-          confusion_matrix.png\")\n\n        # Save any additional files you want\
-          \ to log as artifacts\n        with open(\"additional_file.txt\", \"w\"\
-          ) as f:\n            f.write(\"Additional artifact content\")\n        mlflow.log_artifact(\"\
-          additional_file.txt\")\n\n        data = f\"{mlflow.get_artifact_uri()}/{result.artifact_path}\"\
-          \n\n        with open(output_artifact.path, 'w') as f:\n            f.write(data)\n\
+          \ *\n\ndef train_model(file_path: InputPath(\"CSV\"), output_artifact: Output[Artifact]):\n\
+          \    import mlflow\n    import pandas as pd\n    import numpy as np\n  \
+          \  from sklearn.preprocessing import StandardScaler\n    from sklearn.ensemble\
+          \ import RandomForestRegressor\n    from sklearn.pipeline import Pipeline\n\
+          \    from sklearn.model_selection import train_test_split\n    from sklearn.metrics\
+          \ import mean_squared_error\n\n    df = pd.read_csv(file_path)\n\n    #\
+          \ Filter relevant columns for feature creation\n    relevant_cols = [\n\
+          \        'a-escuam', 'term', 'dummy', 'no'\n    ]\n\n    # Create a feature\
+          \ matrix and target variable\n    X = df[relevant_cols].copy()\n    y =\
+          \ df['lapsed_day'].copy()\n\n    # Drop rows with missing target values\
+          \ and fill missing features\n    X = X.dropna(axis=0, subset=['lapsed_day']).fillna(0)\n\
+          \    y = y.loc[X.index]\n\n    # Scale features to normalize\n    scaler\
+          \ = StandardScaler()\n    X_scaled = scaler.fit_transform(X)\n\n\n    pipeline\
+          \ = Pipeline([\n        ('scaler', StandardScaler()),\n        ('model',\
+          \ RandomForestRegressor(random_state=42, n_estimators=100))\n    ])\n\n\
+          \    # Split data into training (70%), validation (20%), and testing (10%)\n\
+          \    X_train, X_temp, y_train, y_temp = train_test_split(X_scaled, y, test_size=0.3,\
+          \ random_state=42)\n    # Split data into training (70%), validation (20%),\
+          \ and testing (10%)\n    X_val, X_test, y_val, y_test = train_test_split(X_temp,\
+          \ y_temp, test_size=(1/3), random_state=42)\n\n\n    # Train on the training\
+          \ set\n    pipeline.fit(X_train, y_train)\n\n    # Predict on the validation\
+          \ set\n    y_val_pred = pipeline.predict(X_val)\n\n    # Calculate performance\
+          \ on the validation set\n    val_rmse = np.sqrt(mean_squared_error(y_val,\
+          \ y_val_pred))\n    # Log model to MLflow\n    with mlflow.start_run(run_name=\"\
+          Random_Training\"):\n        mlflow.log_metric(\"mse\",val_rmse)\n     \
+          \   mlflow.sklearn.log_model(pipeline, \"model\")\n        data = f\"{mlflow.get_artifact_uri()}/model\"\
+          \n        with open(output_artifact.path, 'w') as f:\n            f.write(data)\n\
           \n"
         env:
         - name: MLFLOW_TRACKING_URI
@@ -185,9 +189,8 @@ deploymentSpec:
           value: minio123
         image: python:3.9
 pipelineInfo:
-  description: Pipeline for training and deploying a model trained on Census Income
-    dataset
-  name: income-pipeline
+  description: Pipeline for predicting price adjustments.
+  name: price-adjustment-pipeline
 root:
   dag:
     tasks:
@@ -197,15 +200,16 @@ root:
           name: comp-download-dataset
         inputs:
           parameters:
-            url:
-              runtimeValue:
-                constant: https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data
+            bucket_name:
+              componentInputParameter: bucket
+            object_key:
+              componentInputParameter: object_key
         taskInfo:
           name: download-dataset
-      preprocess:
+      preprocess-and-feature-engineering:
         cachingOptions: {}
         componentRef:
-          name: comp-preprocess
+          name: comp-preprocess-and-feature-engineering
         dependentTasks:
         - download-dataset
         inputs:
@@ -215,20 +219,30 @@ root:
                 outputArtifactKey: output_file
                 producerTask: download-dataset
         taskInfo:
-          name: preprocess
-      train:
+          name: preprocess-and-feature-engineering
+      train-model:
         cachingOptions: {}
         componentRef:
-          name: comp-train
+          name: comp-train-model
         dependentTasks:
-        - preprocess
+        - preprocess-and-feature-engineering
         inputs:
           artifacts:
             file_path:
               taskOutputArtifact:
                 outputArtifactKey: output_file
-                producerTask: preprocess
+                producerTask: preprocess-and-feature-engineering
         taskInfo:
-          name: train
+          name: train-model
+  inputDefinitions:
+    parameters:
+      bucket:
+        defaultValue: retail-dataset
+        isOptional: true
+        parameterType: STRING
+      object_key:
+        defaultValue: Fact_Collection_202404291553.csv
+        isOptional: true
+        parameterType: STRING
 schemaVersion: 2.1.0
 sdkVersion: kfp-2.7.0
