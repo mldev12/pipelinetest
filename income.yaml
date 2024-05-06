@@ -160,7 +160,8 @@ deploymentSpec:
           \ 'term', 'dummy', 'no']\n\n    # Create a refined feature matrix\n    X_refined\
           \ = df[refined_features].fillna(0)\n\n    # Scale features\n    scaler_refined\
           \ = StandardScaler()\n    X_refined_scaled = scaler_refined.fit_transform(X_refined)\n\
-          \n    mlflow.log_param('learning_rate', 0.2)\n    mlflow.log_param('max_depth',\
+          \    y = df['lapsed_day'].copy()\n    y = y.loc[X_refined_scaled.index]\n\
+          \n\n\n    mlflow.log_param('learning_rate', 0.2)\n    mlflow.log_param('max_depth',\
           \ 3)\n    mlflow.log_param('n_estimators', 200)\n\n\n\n    pipeline = Pipeline([\n\
           \        ('scaler', StandardScaler()),\n        ('model', GradientBoostingRegressor(random_state=42,\
           \ learning_rate=0.2, max_depth=3, n_estimators=200))\n    ])\n\n    # Split\
