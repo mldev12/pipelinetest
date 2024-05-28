@@ -117,6 +117,7 @@ auth_session = get_istio_auth_session(
     password=KUBEFLOW_PASSWORD
 )
 
+print(auth_session["session_cookie"]
 client = kfp.Client(host=f"{KUBEFLOW_ENDPOINT}/pipeline", cookies=auth_session["session_cookie"], namespace="kubeflow-user-example-com")
 #print(client.list_experiments())
 
